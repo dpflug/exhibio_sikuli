@@ -1,0 +1,322 @@
+
+<html>
+   <head>
+      <style type="text/css">
+         .sikuli-code {
+            font-size: 20px;
+            font-family: "Osaka-mono", Monospace;
+            line-height: 1.5em;
+            display:table-cell;
+            white-space: pre-wrap;       /* css-3 */
+            white-space: -moz-pre-wrap !important;  /* Mozilla, since 1999 */
+            white-space: -pre-wrap;      /* Opera 4-6 */
+            white-space: -o-pre-wrap;    /* Opera 7 */
+            word-wrap: break-word;       /* Internet Explorer 5.5+ */
+            width: 99%;   /* remove horizontal scroll-bar when viewing in IE7 */
+         }
+         .sikuli-code img {
+            vertical-align: middle;
+            margin: 2px;
+            border: 1px solid #ccc;
+            padding: 2px;
+            -moz-border-radius: 5px;
+            -webkit-border-radius: 5px;
+            -moz-box-shadow: 1px 1px 1px gray;
+            -webkit-box-shadow: 1px 1px 2px gray;
+         }
+         .kw {
+            color: blue;
+         }
+         .skw {
+            color: rgb(63, 127, 127);
+         }
+
+         .str {
+            color: rgb(128, 0, 0);
+         }
+
+         .dig {
+            color: rgb(128, 64, 0);
+         }
+
+         .cmt {
+            color: rgb(200, 0, 200);
+         }
+
+         h2 {
+            display: inline;
+            font-weight: normal;
+         }
+
+         .info {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 20px;
+            display: none;
+         }
+
+         a {
+            color: #9D2900;
+         }
+
+         body {
+            font-family: "Trebuchet MS", Arial, Sans-Serif;
+         }
+
+      </style>
+   </head>
+<body>
+<div class="info">
+<h2>exhibio.sikuli</h2> <a href="exhibio.zip">(Download this script)</a>
+</div>
+<pre class="sikuli-code">
+<span class="kw">from</span> pprint <span class="kw">import</span> pprint
+<span class="kw">import</span> csv
+<span class="kw">import</span> re
+alphabetic = re.compile(<span class="str">'\D+'</span>)
+
+<span class="cmt">#Let's speed things up.</span>
+Settings.MoveMouseDelay=<span class="dig">0</span>
+
+<span class="kw">def</span> save_schedule():
+    <span class="str">"""Opens, saves schedules as csv, closes Excel.
+       
+       Assumes you have Outlook open to the email with the Excel attachment.
+       Actually makes a lot of assumptions, but that's life with Sikuli.
+    """</span>
+    <span class="cmt"># It's a fuzzy match, so this should work:</span>
+    <span class="skw">doubleClick</span>(Screen(<span class="dig">1</span>).<span class="skw">wait</span>(<img src="1454000341475.png" />, <span class="dig">60</span>))
+    <span class="cmt"># Also, the amount of "fuzz" is configurable. </span>
+    <span class="skw">wait</span>(<img src="1454000411454.png" />, <span class="dig">15</span>)
+    <span class="skw">type</span>(<span class="str">"s"</span>, Key.CTRL)
+    <span class="skw">wait</span>(<img src="1454000434509.png" />, <span class="dig">3</span>)
+    <span class="skw">type</span>(<span class="str">"e"</span>)
+    <span class="skw">wait</span>(<img src="1454000492008.png" />, <span class="dig">3</span>)
+    <span class="skw">type</span>(<span class="str">"\n"</span>)
+    <span class="skw">wait</span>(<img src="1454000509864.png" />, <span class="dig">5</span>)
+    <span class="skw">type</span>(<span class="str">"cschedule.csv\tc\n"</span>)
+    <span class="kw">if</span> exists(<img src="1454000531481.png" />):
+        <span class="skw">type</span>(<span class="str">"y"</span>)
+    <span class="skw">wait</span>(<img src="1454000626904.png" />, <span class="dig">3</span>)
+    <span class="skw">type</span>(<span class="str">"y"</span>)
+    <span class="skw">type</span>(Key.F4, Key.ALT)
+    <span class="skw">wait</span>(<img src="1454000580160.png" />, <span class="dig">3</span>)
+    <span class="skw">type</span>(<span class="str">"n"</span>)
+
+
+<span class="kw">def</span> init_exhibio():
+    <span class="str">"""Let's pull up the Sikuli webpage."""</span>
+    switchApp(<span class="str">r"C:\Program Files\Google\Chrome\Application\chrome.exe"</span>)
+    <span class="skw">wait</span>(<img src="1454000837040.png" />, <span class="dig">30</span>)
+    <span class="cmt"># Maximize</span>
+    <span class="skw">type</span>(Key.SPACE, Key.ALT)
+    <span class="skw">wait</span>(<span class="dig">0.5</span>)
+    <span class="skw">type</span>(<span class="str">"x"</span>)
+    <span class="skw">wait</span>(<span class="dig">1</span>)
+    <span class="skw">type</span>(<span class="str">"L"</span>, Key.CTRL)
+    <span class="skw">type</span>(<span class="str">"exhibio.circuit5.org\n"</span>)
+    <span class="kw">if</span> exists(<img src="1454000857364.png" />, <span class="dig">5</span>):
+        <span class="skw">type</span>(<span class="str">"\texhibio\texhibio\n"</span>)
+
+
+<span class="kw">def</span> findDay(today, tries):
+    <span class="str">"""Gets us into today's edit page."""</span>
+    titles = {<span class="str">"MONDAY"</span>: <img src="1454001256863.png" />,
+              <span class="str">"TUESDAY"</span>: <img src="1454001265351.png" />,
+              <span class="str">"WEDNESDAY"</span>: <img src="1454001276416.png" />,
+              <span class="str">"THURSDAY"</span>: <img src="1454001284800.png" />,
+              <span class="str">"FRIDAY"</span>: <img src="1454001299576.png" />}
+    <span class="kw">def</span> aux(tries):
+        <span class="str">"""This function isn't strictly necessary.
+
+           It tries to find the day's title in the list,
+           and scrolls through when it fails.
+
+           However, since we're using the shorter list mode,
+           all the days fit in one page. However, I'm leaving
+           it here for reference.
+        """</span>
+        <span class="kw">try</span>:
+            <span class="skw">click</span>(titles[today])
+        <span class="kw">except</span> FindFailed:
+            <span class="kw">if</span> tries &gt; <span class="dig">0</span>:
+                <span class="skw">click</span>(<img src="1439576487948.png" />)
+                aux(tries - <span class="dig">1</span>)
+            <span class="kw">else</span>:
+                <span class="kw">raise</span>
+
+    <span class="skw">click</span>(<span class="skw">wait</span>(<img src="1454001130719.png" />, <span class="dig">30</span>))
+    <span class="skw">click</span>(<span class="skw">wait</span>(<img src="1454001155262.png" />, <span class="dig">5</span>))
+    <span class="skw">click</span>(<img src="1454001165554.png" />)
+    waitVanish(<img src="1454001211570.png" />, <span class="dig">5</span>)
+    aux(tries)
+    <span class="skw">click</span>(<span class="skw">wait</span>(<img src="1454001323454.png" />,<span class="dig">3</span>))
+
+<span class="kw">def</span> pick_slide(n):
+    <span class="str">"""Pull up slide n."""</span>
+    dropdown = <span class="skw">wait</span>(<img src="1454002257685.png" />, <span class="dig">2</span>).offset(<span class="dig">60</span>, <span class="dig">4</span>)
+    <span class="skw">click</span>(dropdown)
+    <span class="cmt"># Each page is 13px below the previous. The first page is 15px from the drop-down box.</span>
+    <span class="skw">click</span>(dropdown.offset(<span class="dig">0</span>,<span class="dig">2</span> + <span class="dig">19</span> * n))
+    <span class="cmt"># There isn't a visual indicator for when the slide is loaded, AFAICT. I'm just hoping 2 seconds is enough. :)</span>
+    <span class="skw">wait</span>(<span class="dig">2</span>)
+
+
+<span class="cmt"># Ok. Let's get our data.</span>
+<span class="kw">def</span> parse_judge_schedule():
+    <span class="str">"""This massages our schedule data out of the csv created by save_schedule().
+
+       It assumes we only have 2 categories of people: Judges and non-judges.
+       A lot of the gymnastics are in handling the freaky formatting we end up with
+       due to the original Excel file being decorated/intended for humans.
+
+       row[0] is the judge's name
+       row[4] is the time
+       row[6] is the event or note
+       row[8], if it exists, is the room/courtroom
+       row[10] is the floor
+    """</span>
+    cs = csv.reader(open(<span class="str">r'C:\Users\ablane\My Documents\cschedule.csv'</span>), dialect=<span class="str">'excel'</span>)
+    today = cs.next()[<span class="dig">8</span>]
+    cs.next()
+    schedules = {<span class="str">'judges'</span>: [], <span class="str">'other'</span>: []}
+    current_judge = <span class="str">''</span>
+    out_of_order = False
+    current_position = <span class="str">'judges'</span>
+    <span class="kw">for</span> row <span class="kw">in</span> cs:
+        <span class="kw">if</span> alphabetic.match(row[<span class="dig">0</span>]):
+            <span class="cmt"># When names are out of order, they're either a visiting judge or some other official.</span>
+            <span class="kw">if</span> current_judge <span class="kw">and</span> (out_of_order <span class="kw">or</span> ord(row[<span class="dig">0</span>][<span class="dig">0</span>]) &lt; ord(current_judge[<span class="dig">0</span>])):
+                out_of_order = True
+                <span class="kw">if</span> popAsk(<span class="str">"Is {} a judge?"</span>.format(row[<span class="dig">0</span>])):
+                    current_position = <span class="str">'judges'</span>
+                    sort_judges = True
+                <span class="kw">else</span>:
+                    current_position = <span class="str">"other"</span>
+            current_judge = row[<span class="dig">0</span>].title()
+            <span class="kw">if</span> current_judge == <span class="str">"Williams"</span>:
+                <span class="cmt"># Judge Ritterhoff-Williams wants to appear as such</span>
+                current_judge = <span class="str">"RitterhoffWilliams"</span>
+        <span class="cmt"># Don't include mediations or internal things</span>
+        <span class="kw">if</span> row[<span class="dig">10</span>] <span class="kw">and</span> <span class="kw">not</span> row[<span class="dig">6</span>] == <span class="str">'Mediations'</span> <span class="kw">and</span> row[<span class="dig">6</span>].<span class="skw">find</span>(<span class="str">"Personnel"</span>) == -<span class="dig">1</span>:
+            <span class="kw">if</span> row[<span class="dig">8</span>].strip() == <span class="str">"Jury Assembly Room"</span>:
+                <span class="cmt"># JAR doesn't need a floor #?</span>
+                schedules[current_position].append((current_judge,
+                                                    row[<span class="dig">4</span>],
+                                                    row[<span class="dig">6</span>].strip().replace(<span class="str">" cont'd"</span>, <span class="str">''</span>),
+                                                    row[<span class="dig">8</span>].replace(<span class="str">"bly Room"</span>,<span class="str">'bly'</span>)))
+            <span class="kw">elif</span> row[<span class="dig">8</span>]:
+                <span class="cmt"># Standard courtroom, 2D - 2nd floor for example</span>
+                schedules[current_position].append((current_judge,
+                                                    row[<span class="dig">4</span>],
+                                                    row[<span class="dig">6</span>].strip().replace(<span class="str">" cont'd"</span>, <span class="str">''</span>).replace(<span class="str">' Docket'</span>, <span class="str">''</span>),
+                                                    row[<span class="dig">8</span>] + <span class="str">" - "</span> + row[<span class="dig">10</span>] + <span class="str">" Floor"</span>))
+            <span class="kw">elif</span> row[<span class="dig">10</span>] <span class="kw">and</span> row[<span class="dig">6</span>]:
+                <span class="cmt"># Check with security</span>
+                schedules[current_position].append((current_judge,
+                                                    row[<span class="dig">4</span>],
+                                                    row[<span class="dig">6</span>].partition(<span class="str">"-"</span>)[<span class="dig">0</span>].strip().replace(<span class="str">" cont'd"</span>, <span class="str">''</span>).replace(<span class="str">' Docket'</span>, <span class="str">''</span>),
+                                                    row[<span class="dig">10</span>] + <span class="str">" Floor Security"</span>))
+            <span class="kw">elif</span> row[<span class="dig">6</span>]:
+                <span class="cmt"># These are just notes. The space is to allow my tab to the next field to work in exhibio.</span>
+                schedules[current_position].append((current_judge, <span class="str">' '</span>, row[<span class="dig">6</span>].strip(), <span class="str">' '</span>))
+
+    <span class="cmt"># Sort list of judges</span>
+    schedules[<span class="str">"judges"</span>].sort(key=<span class="kw">lambda</span> k: k[<span class="dig">0</span>])
+    <span class="cmt"># and others</span>
+    schedules[<span class="str">"other"</span>].sort(key=<span class="kw">lambda</span> k: k[<span class="dig">0</span>])
+
+    <span class="kw">return</span>(today, schedules)
+
+<span class="kw">def</span> fill_table(data):
+    rows = len(data) - <span class="dig">1</span>
+    <span class="skw">type</span>(Key.HOME)
+    <span class="kw">for</span> row_num, row <span class="kw">in</span> enumerate(data):
+        columns = len(row) - <span class="dig">1</span>
+        <span class="kw">for</span> column_num, column <span class="kw">in</span> enumerate(row):
+            <span class="skw">type</span>(Key.DELETE * <span class="dig">5</span>, Key.CTRL)
+            <span class="skw">type</span>(Key.END, Key.SHIFT)
+            <span class="kw">print</span>(row_num, column_num, rows, columns)
+            <span class="kw">if</span> row_num &lt; rows <span class="kw">or</span> column_num &lt; columns:
+                <span class="skw">type</span>(<span class="str">"\t"</span>)
+
+<span class="kw">def</span> enable_slide():
+    <span class="str">"""Makes sure current slide is active."""</span>
+    <span class="skw">click</span>(<span class="skw">wait</span>(<img src="1454001871349.png" />, <span class="dig">5</span>))
+
+    <span class="skw">click</span>(<span class="skw">wait</span>(<img src="1454001900776.png" />, <span class="dig">5</span>))
+
+    <span class="cmt"># We can be pretty exact about this.</span>
+    Settings.MinSimilarity = <span class="dig">0.85</span>
+    disabled = <span class="skw">wait</span>(<img src="1454001914606-1.png" />, <span class="dig">2</span>).offset(<span class="dig">225</span>,<span class="dig">0</span>).exists(<img src="1454003185224.png" />)
+    <span class="kw">if</span> disabled:
+        <span class="skw">click</span>(disabled)
+        <span class="skw">click</span>(<img src="1454003297692.png" />)
+    <span class="cmt">#click("1440002819045.png")</span>
+    <span class="skw">click</span>(<img src="1454003308591.png" />)
+    <span class="skw">type</span>(Key.PAGE_DOWN)
+    <span class="skw">type</span>(Key.UP)
+    <span class="cmt"># Wait on their little animation</span>
+    <span class="skw">wait</span>(<span class="dig">1</span>)
+    <span class="cmt"># Return to default similarity</span>
+    Settings.MinSimilarity = <span class="dig">0.7</span>
+
+<span class="kw">def</span> fill_schedules(sched_data, judges=True):
+    <span class="str">"""Fills our schedule pages with our schedule data.
+
+        TODO: Fix (split?) this function to work if there's multiple pages of non-judge schedule.
+
+       Arguments:
+       sched_data: List of pages. Pages are lists of schedule data. Schedule data is lists of columns in the table.
+       judges: True if we're filling in the judges' schedule
+    """</span>
+    data = list(paginate_schedule(sched_data, <span class="dig">9</span>))
+
+    <span class="kw">for</span> page_num, page <span class="kw">in</span> enumerate(data):
+        <span class="kw">if</span> judges:
+            <span class="cmt"># The schedules start on the 3rd slide, and enumerate starts at 0</span>
+            pick_slide(page_num + <span class="dig">3</span>)
+        <span class="kw">else</span>:
+            <span class="cmt"># Everyone else only goes on the last slide.</span>
+            pick_slide(find_last_slide())
+        enable_slide()
+        <span class="skw">click</span>(<img src="1454005449444.png" />)
+        <span class="skw">type</span>(Key.HOME, Key.CTRL)
+        <span class="skw">click</span>(<span class="skw">wait</span>(<img src="1454005306463.png" />,<span class="dig">3</span>))
+        <span class="skw">type</span>(Key.DOWN * <span class="dig">2</span>)
+        fill_table(page)
+        <span class="kw">if</span> <span class="kw">not</span> popAsk(<span class="str">"Look good?"</span>, <span class="str">"Page Finished"</span>):
+            <span class="skw">popup</span>(<span class="str">"I apologize. I've obviously gotten confused. Tell David: #7874, dpflug@circuit5.org."</span>)
+            <span class="kw">try</span>:
+                <span class="skw">click</span>(<img src="1454001685093.png" />)
+            <span class="kw">except</span>:
+                <span class="skw">popup</span>(<span class="str">"Something has gone wrong and you'll have to clean up after me, too. :( Sorry."</span>)
+            <span class="kw">return</span>
+        save = <span class="skw">click</span>(<img src="1454001697396.png" />)
+        <span class="skw">wait</span>(<img src="1454001711696.png" />, <span class="dig">30</span>)
+        <span class="skw">type</span>(Key.ENTER)
+        <span class="skw">type</span>(Key.HOME, Key.CTRL)
+
+<span class="kw">def</span> find_last_slide():
+    <span class="str">"""Tries to OCR final slide info, falls back to asking the human."""</span>
+    page_list = <span class="skw">find</span>(<img src="1454001744398.png" />).offset(<span class="dig">42</span>, <span class="dig">4</span>).grow(<span class="dig">110</span>, <span class="dig">2</span>).text()
+    <span class="kw">try</span>:
+        <span class="kw">return</span> int(re.search(<span class="str">r' of ?(\d+)\)'</span>, page_list).group(<span class="dig">1</span>))
+    <span class="kw">except</span> AttributeError:
+        <span class="kw">return</span> int(<span class="skw">input</span>(<span class="str">"How many slides are there today? (What's the highest number in the \"(Page 1 of ...)\" part?)"</span>))
+
+
+<span class="kw">def</span> paginate_schedule(sched, per_page):
+    <span class="kw">for</span> start <span class="kw">in</span> xrange(<span class="dig">0</span>, len(sched), per_page):
+        <span class="kw">yield</span> sched[start:start+per_page]
+
+<span class="cmt">#save_schedule()</span>
+today, schedules = parse_judge_schedule()
+<span class="cmt">#init_exhibio()</span>
+findDay(today, <span class="dig">1</span>)
+fill_schedules(schedules[<span class="str">"judges"</span>])
+<span class="kw">if</span> schedules[<span class="str">"other"</span>]:
+    fill_schedules(schedules[<span class="str">"other"</span>], False)
+</pre>
+</body>
+</html>
