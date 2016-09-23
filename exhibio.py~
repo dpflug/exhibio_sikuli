@@ -27,7 +27,7 @@ def save_schedule():
     # It's a fuzzy match, so this should work:
     doubleClick(Screen(1).wait("1454000341475.png", 60))
     # Also, the amount of "fuzz" is configurable.
-    wait("ablane-Protected_View.png", 15)
+    wait("1454000411454.png", 15)
     type("s", Key.CTRL)
     wait("1454000434509.png", 3)
     type("e")
@@ -100,9 +100,7 @@ def pick_slide(n):
     click(dropdown)
     # Each page is 13px below the previous. The first page is 15px from the
     # drop-down box.
-    type(Key.PGUP * 2)
-    type(Key.DOWN * (n - 1))
-    type(Key.ENTER)
+    click(dropdown.offset(0, 2 + 19 * n))
     # There isn't a visual indicator for when the slide is loaded, AFAICT. I'm
     # just hoping 3 seconds is enough. :)
     wait(3)
@@ -229,7 +227,7 @@ def enable_slide():
     if disabled:
         click(disabled)
         click("1454003297692.png")
-    # click("ablane-show_page_setup.png")
+    # click("1440002819045.png")
     click("1454003308591.png")
     type(Key.PAGE_DOWN)
     type(Key.UP)
@@ -254,7 +252,7 @@ def fill_schedules(sched_data, judges=True):
             pick_slide(page_num + 3)
         else:
             # Everyone else only goes on the last slide.
-            pick_slide(8)
+            pick_slide(find_last_slide())
         #enable_slide()
         click(wait("html.png"))
         click(wait("dpflug-html_editor.png").offset(0, 30))
@@ -272,8 +270,8 @@ def fill_schedules(sched_data, judges=True):
                 popup(
                     "Something has gone wrong and you'll have to clean up after me, too. :( Sorry.")
             return
-        save = click("dpflug-save.png")
-        wait("dpflug-ok.png", 30)
+        save = click("dpflug_save.png")
+        wait("dpflug_ok.png", 30)
         type(Key.ENTER)
         type(Key.HOME, Key.CTRL)
 
@@ -295,6 +293,16 @@ def generate_table(data):
                                     date=today.strftime("%m/%d/%Y"),
                                     jobtitle='JUDGE',
                                     rows=rows))
+
+
+def find_last_slide():
+    """Tries to OCR final slide info, falls back to asking the human."""
+    page_list = find("1454001744398.png").offset(42, 4).grow(110, 2).text()
+    try:
+        return int(re.search(r' of ?(\d+)\)', page_list).group(1))
+    except AttributeError:
+        return int(input(
+            "How many slides are there today? (What's the highest number in the \"(Page 1 of ...)\" part?)"))
 
 
 def paginate_schedule(sched, per_page):
