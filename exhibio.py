@@ -96,7 +96,7 @@ def findDay(today, tries):
 
 def pick_slide(n):
     """Pull up slide n."""
-    dropdown = wait("select_page_dpflug.png", 2).offset(60, 4)
+    dropdown = wait("ablane-select_page.png", 2).offset(60, 4)
     click(dropdown)
     # Each page is 13px below the previous. The first page is 15px from the
     # drop-down box.
@@ -154,7 +154,7 @@ def parse_judge_schedule():
        row[8], if it exists, is the room/courtroom
        row[10] is the floor
     """
-    cs = csv.reader(open(r'/home/dpflug/cschedule.csv'), dialect='excel')
+    cs = csv.reader(open(r'C:\Users\ablane\My Documents\cschedule.csv'), dialect='excel')
     today = datetime.strptime(cs.next()[6], "%B %d, %Y")
     cs.next()  # Skip the headers
     schedules = {'judges': [], 'other': []}
@@ -256,8 +256,8 @@ def fill_schedules(sched_data, judges=True):
             # Everyone else only goes on the last slide.
             pick_slide(8)
         #enable_slide()
-        click(wait("html.png"))
-        click(wait("dpflug-html_editor.png").offset(0, 30))
+        click(wait("ablane-html.png"))
+        click(wait("ablane-html_editor.png").offset(0, 30))
         type(Key.END, Key.CTRL)
         type(Key.HOME, Key.CTRL + Key.SHIFT)
         type(Key.DELETE)
@@ -272,8 +272,8 @@ def fill_schedules(sched_data, judges=True):
                 popup(
                     "Something has gone wrong and you'll have to clean up after me, too. :( Sorry.")
             return
-        save = click("dpflug-save.png")
-        wait("dpflug-ok.png", 30)
+        save = click("ablane-save.png")
+        wait("ablane-pane_saved.png", 30)
         type(Key.ENTER)
         type(Key.HOME, Key.CTRL)
 
@@ -301,10 +301,19 @@ def paginate_schedule(sched, per_page):
     for start in xrange(0, len(sched), per_page):
         yield sched[start:start + per_page]
 
-#save_schedule()
+try:
+    save_schedule()
+except:
+    popup("I don't see the email. Can you save the schedule to %USERPROFILE%\Documents\cschedule.csv, then hit OK?")
+
 today, schedules = parse_judge_schedule()
-#init_exhibio()
-#findDay(today.strftime("%A"), 1)
+
+try:
+    init_exhibio()
+    findDay(today.strftime("%A"), 1)
+except:
+    popup("I couldn't start Exhibio. Can you open it in Chrome, go to the day we're filling in, then hit OK? Thanks!")
+
 fill_schedules(schedules["judges"])
 if schedules["other"]:
     fill_schedules(schedules["other"], False)
