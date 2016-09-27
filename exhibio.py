@@ -100,7 +100,7 @@ def pick_slide(n):
     click(dropdown)
     # Each page is 13px below the previous. The first page is 15px from the
     # drop-down box.
-    type(Key.PGUP * 2)
+    type(Key.PAGE_UP * 2)
     type(Key.DOWN * (n - 1))
     type(Key.ENTER)
     # There isn't a visual indicator for when the slide is loaded, AFAICT. I'm
