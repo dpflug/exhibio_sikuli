@@ -17,6 +17,9 @@ slide_template = Template('<p $pstuff><strong>COURT SCHEDULE - $date</strong></p
 row_template = Template(
     '<td $tdstyle>$judge</td><td $timetdstyle>$time</td><td $tdstyle>$event</td><td $tdstyle>$location</td></tr>')
 
+first_template = Template('<p $pstuff><strong><i>$event</i></strong></p><p ${pstuff}>$location&nbsp;&nbsp;&nbsp;$time&nbsp;&nbsp;&nbsp;Judge $judge</p>')
+intro_template = Template(
+        '<p $pstuff>&nbsp;&nbsp;<strong><font color="#000080"><i>COURT SCHEDULE</i></font></strong></p><p $pstuff><strong>$dow</strong></p><p $pstuff>$date</p><p $pstuff>&nbsp;</p>$firstappear<p $pstuff>&nbsp;</p>$misdemeanor')
 
 def save_schedule():
     """Opens, saves schedules as csv, closes Excel.
@@ -27,7 +30,7 @@ def save_schedule():
     # It's a fuzzy match, so this should work:
     doubleClick(Screen(1).wait("1454000341475.png", 60))
     # Also, the amount of "fuzz" is configurable.
-    wait("ablane-Protected_View.png", 15)
+    wait("dpflug-Protected_View.png", 15)
     type("s", Key.CTRL)
     wait("1454000434509.png", 3)
     type("e")
@@ -96,7 +99,7 @@ def findDay(today, tries):
 
 def pick_slide(n):
     """Pull up slide n."""
-    dropdown = wait("ablane-select_page.png", 2).offset(60, 4)
+    dropdown = wait("dpflug-select_page.png", 2).offset(60, 4)
     click(dropdown)
     # Each page is 13px below the previous. The first page is 15px from the
     # drop-down box.
@@ -129,11 +132,12 @@ def get_event(e):
     """Takes event text, formats it per preferences that have been decided on, then returns it"""
     event = e.partition("-")[0].partition(":")[0].strip()
     for removal in [
-        " cont'd",
-        ' Docket',
-        ' PTC',
-        ' VOP & Notice to Appear',
-        ' Judicial Review',
+            " cont'd",
+            ' Docket',
+            ' PTC',
+            ' VOP & Notice to Appear',
+            ' Judicial Review',
+            ' Miscellaneous',
             ' Detention']:
         event = event.replace(removal, '')
     return event
@@ -154,10 +158,13 @@ def parse_judge_schedule():
        row[8], if it exists, is the room/courtroom
        row[10] is the floor
     """
-    cs = csv.reader(open(r'C:\Users\ablane\My Documents\cschedule.csv'), dialect='excel')
+    cs = csv.reader(open(r'/home/dpflug/cschedule.csv'), dialect='excel')
     today = datetime.strptime(cs.next()[6], "%B %d, %Y")
     cs.next()  # Skip the headers
-    schedules = {'judges': [], 'other': []}
+    schedules = {'judges': [],
+                 'other': [],
+                 '1st_appearances': [],
+                 'traffic_misdemeanor': []}
     current_judge = ''
     out_of_order = False
     current_position = 'judges'
@@ -183,10 +190,23 @@ def parse_judge_schedule():
             if current_judge == "Williams":
                 # Judge Ritterhoff-Williams wants to appear as such
                 current_judge = "RitterhoffWilliams"
+            elif current_judge.lower() == "mccune":
+                current_judge = "McCune"
         # Don't include mediations or internal things
         if (r['floor'] and r['event'].strip() and not r['event'] ==
                 'Mediations' and r['event'].find("Personnel") == -1):
-            # Now, let's add the data to our schedule
+            # First appearances and "traffic & misdemeanor" get treated differently
+            # They show up on the intro page
+            if current_position != "other":
+                if ('st appear' in r['event'].lower()):
+                    current_position = '1st_appearances'
+                elif ('traffic' in r['event'].lower() and
+                      'misdemeanor' in r['event'].lower()):
+                    current_position = 'traffic_misdemeanor'
+                else:
+                    current_position = 'judges'
+
+            # Now, let's add it to our schedule data
             schedules[current_position].append((current_judge,
                                                 r['time'],
                                                 get_event(r['event']),
@@ -239,7 +259,23 @@ def enable_slide():
     Settings.MinSimilarity = 0.7
 
 
-def fill_schedules(sched_data, judges=True):
+def fill_intro(sched_data):
+    pick_slide(2)
+    fill_page(sched_data, False)
+
+
+def fill_judges(sched_data):
+    for page_num, page in enumerate(paginate_schedule(sched_data, 9)):
+        pick_slide(page_num + 3)
+        fill_page(page)
+
+
+def fill_other(sched_data):
+    pick_slide(8)
+    fill_page(sched_data)
+
+
+def fill_page(sched_data, judges=True):
     """Fills our schedule pages with our schedule data.
 
         TODO: Fix (split?) this function to work if there's multiple pages of non-judge schedule.
@@ -248,38 +284,65 @@ def fill_schedules(sched_data, judges=True):
        sched_data: List of pages. Pages are lists of schedule data. Schedule data is lists of columns in the table.
        judges: True if we're filling in the judges' schedule
     """
-    for page_num, page in enumerate(paginate_schedule(sched_data, 9)):
-        if judges:
-            # The schedules start on the 3rd slide, and enumerate starts at 0
-            pick_slide(page_num + 3)
-        else:
-            # Everyone else only goes on the last slide.
-            pick_slide(8)
-        #enable_slide()
-        click(wait("ablane-html.png"))
-        click(wait("ablane-html_editor.png").offset(0, 30))
-        type(Key.END, Key.CTRL)
-        type(Key.HOME, Key.CTRL + Key.SHIFT)
-        type(Key.DELETE)
-        paste(generate_table(page))
-        click("update.png")
-        if not popAsk("Look good?", "Page Finished"):
+    click(wait("dpflug-html.png"))
+    click(wait("dpflug-html_editor.png").offset(0, 30))
+    type("a", Key.CTRL)
+    type(Key.DELETE)
+    if judges:
+        paste(generate_table(sched_data, judges))
+    else:
+        paste(generate_intro(sched_data))
+    click("update.png")
+    if not popAsk("Look good?", "Page Finished"):
+        popup(
+            "I apologize. I've obviously gotten confused. Tell David: #7874, dpflug@circuit5.org.")
+        try:
+            click("1454001685093.png")
+        except:
             popup(
-                "I apologize. I've obviously gotten confused. Tell David: #7874, dpflug@circuit5.org.")
-            try:
-                click("1454001685093.png")
-            except:
-                popup(
-                    "Something has gone wrong and you'll have to clean up after me, too. :( Sorry.")
-            return
-        save = click("ablane-save.png")
-        wait("ablane-pane_saved.png", 30)
-        type(Key.ENTER)
-        type(Key.HOME, Key.CTRL)
+                "Something has gone wrong and you'll have to clean up after me, too. :( Sorry.")
+            exit()
+    save = click("dpflug-save.png")
+    wait("dpflug-pane_saved.png", 30)
+    type(Key.ENTER)
+    type(Key.HOME, Key.CTRL)
 
 
-def generate_table(data):
+def generate_intro(data):
+    if data['1st_appearances']:
+        firsta = data['1st_appearances'][0]
+        fa = first_template.substitute(dict(zip(['judge',
+                                                 'time',
+                                                 'event',
+                                                 'location'],
+                                                firsta)),
+                                       pstuff=pstuff)
+    else:
+        fa = ''
+
+    if data['traffic_misdemeanor']:
+        trafmis = data['traffic_misdemeanor'][0]
+        tm = first_template.substitute(dict(zip(['judge',
+                                               'time',
+                                               'event',
+                                               'location'],
+                                              trafmis)),
+                                     pstuff=pstuff)
+    else:
+        tm = ''
+
+    paste(intro_template.substitute(pstuff=pstuff,
+                                     date=today.strftime("%B %d, %Y"),
+                                     dow=today.strftime("%A"),
+                                     firstappear=fa,
+                                     misdemeanor=tm))
+
+def generate_table(data, judges):
     rows = ''
+    if judges:
+        jt = 'JUDGE'
+    else:
+        jt = 'General Magistrate/Hearing Officer'
     for row in data:
         rows += row_template.substitute(dict(zip(['judge',
                                                   'time',
@@ -289,32 +352,33 @@ def generate_table(data):
                                         tdstyle=tdstyle,
                                         timetdstyle=timetdstyle)
 
-    paste(slide_template.substitute(pstuff=pstuff,
-                                    tdstyle=tdstyle,
-                                    timetdstyle=timetdstyle,
-                                    date=today.strftime("%m/%d/%Y"),
-                                    jobtitle='JUDGE',
-                                    rows=rows))
+    return(slide_template.substitute(pstuff=pstuff,
+                                     tdstyle=tdstyle,
+                                     timetdstyle=timetdstyle,
+                                     date=today.strftime("%m/%d/%Y").lstrip("0"),
+                                     jobtitle=jt,
+                                     rows=rows))
 
 
 def paginate_schedule(sched, per_page):
     for start in xrange(0, len(sched), per_page):
         yield sched[start:start + per_page]
 
-try:
-    save_schedule()
-except:
-    popup("I don't see the email. Can you save the schedule to %USERPROFILE%\Documents\cschedule.csv, then hit OK?")
+#try:
+#    save_schedule()
+#except:
+#    popup("I don't see the email. Can you save the schedule to %USERPROFILE%\Documents\cschedule.csv, then hit OK?")
 
 today, schedules = parse_judge_schedule()
 
-try:
-    init_exhibio()
-    findDay(today.strftime("%A"), 1)
-except:
-    popup("I couldn't start Exhibio. Can you open it in Chrome, go to the day we're filling in, then hit OK? Thanks!")
+#try:
+#    init_exhibio()
+#    findDay(today.strftime("%A"), 1)
+#except:
+#    popup("I couldn't start Exhibio. Can you open it in Chrome, go to the day we're filling in, then hit OK? Thanks!")
 
-fill_schedules(schedules["judges"])
+if schedules['1st_appearances'] or schedules['traffic_misdemeanor']:
+    fill_intro(schedules)
+fill_judges(schedules["judges"])
 if schedules["other"]:
-    fill_schedules(schedules["other"], False)
-
+    fill_other(schedules["other"])
